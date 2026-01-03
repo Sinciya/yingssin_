@@ -411,20 +411,26 @@
                 <div class="tape tape-1">WANT MORE?</div>
             </div>
             <div id="crate-opened" class="crate-content">
-                <!-- Updated Header -->
-                <div class="crate-header">CONFIDENTIAL FILES</div>
-                <a href="https://versed-jaw-335.notion.site/CV-226322d4da0e80a5ab99df2aa5bd2b33?pvs=74" class="contact-btn">CHECK RESUME</a>
-                <a href="mailto:sinciya.yang@gmail.com" class="contact-btn">SEND EMAIL</a>
-                <a href="https://www.instagram.com/chihhsieny/" class="contact-btn">SEE INSTAGRAM</a>
-                <div class="input-group">
-                    <p style="font-weight:bold; margin:0 0 5px 0;">LEAVE YOUR INFO:</p>
-                    <!-- Updated Placeholders/Text -->
-                    <input type="text" class="fake-input" placeholder="Your Name...">
-                    <input type="text" class="fake-input" placeholder="Email...">
-                    <button class="contact-btn" style="margin-top:5px; background:var(--p5-red); border-color:var(--p5-red);">SEND</button>
-                </div>
-                <button class="contact-btn return-btn" onclick="closePackage()">[ CLOSE BOX ]</button>
-            </div>
+    <div class="crate-header">CONFIDENTIAL FILES</div>
+    
+    <a href="https://versed-jaw-335.notion.site/CV-226322d4da0e80a5ab99df2aa5bd2b33?pvs=74" class="contact-btn" target="_blank">CHECK RESUME</a>
+    <a href="mailto:sinciya.yang@gmail.com" class="contact-btn">SEND EMAIL</a>
+    <a href="https://www.instagram.com/chihhsieny/" class="contact-btn" target="_blank">SEE INSTAGRAM</a>
+
+    <form class="input-group" action="https://formsubmit.co/sinciya.yang@gmail.com" method="POST">
+        
+        <p style="font-weight:bold; margin:0 0 5px 0;">LEAVE YOUR INFO:</p>
+        
+        <input type="hidden" name="_captcha" value="false">
+
+        <input type="text" name="name" class="fake-input" placeholder="Your Name..." required>
+        <input type="email" name="email" class="fake-input" placeholder="Email..." required>
+        
+        <button type="submit" class="contact-btn" style="margin-top:5px; background:var(--p5-red); border-color:var(--p5-red);">SEND</button>
+    </form>
+    
+    <button class="contact-btn return-btn" onclick="closePackage()">[ CLOSE BOX ]</button>
+</div>
         </section>
         
         <footer style="background:var(--p5-red); color:white; padding:20px; text-align:center;">
