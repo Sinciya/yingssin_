@@ -7,6 +7,93 @@
     <link rel="icon" type="image/x-icon" href="hat.png">
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Roboto:wght@900&family=Special+Elite&display=swap" rel="stylesheet">
     <style>
+
+        /* ==========================================
+           MOBILE RESPONSIVE FIXES (手機版修正)
+           ========================================== */
+        @media screen and (max-width: 768px) {
+            
+            /* 1. 修正名字與頭像被切掉的問題 */
+            .hero-avatar {
+                width: 90%;       /* 寬度改為螢幕的 90% */
+                height: auto;     /* 高度自動 */
+                margin: 0 auto;   /* 置中 */
+                flex-direction: column; /* 圖片和文字垂直排列 */
+            }
+            .hero-avatar img {
+                width: 250px;     /* 手機上圖片縮小 */
+                height: 250px;
+                max-width: 100%;
+            }
+            .hero-avatar h3 {
+                font-size: 1.2rem; /* 名字字體縮小 */
+                margin-top: 15px;  /* 增加與圖片的間距 */
+                text-align: center;
+                word-break: break-word; /* 防止太長被切掉 */
+            }
+            /* 調整漂浮標籤的大小與位置，避免擋住臉 */
+            .tag { transform: scale(0.7) skew(-15deg) !important; }
+            .tag-narrative { font-size: 2rem; top: 5%; right: 5%; }
+            .tag-service { width: 90%; font-size: 1rem; }
+
+            /* 2. RESEARCH / WORKS 改為上下排列 */
+            #portal-split {
+                flex-direction: column; /* 改為垂直排列 */
+                height: auto;           /* 高度不再固定，隨內容延伸 */
+            }
+            .split-panel {
+                width: 100% !important; /* 強制全寬 */
+                height: 50vh;           /* 各佔畫面一半高度 */
+                margin-left: 0 !important; /* 移除原本的負邊距 */
+                clip-path: none !important; /* 手機版移除斜切效果，改為方塊以免內容被切 */
+                border-bottom: 2px solid white; /* 加入分隔線 */
+            }
+            /* 讓滑鼠懸停效果在手機上也保持全寬 */
+            .panel-research:hover, .panel-works:hover {
+                width: 100% !important; 
+            }
+            .panel-title {
+                font-size: 3rem; /* 標題字體縮小 */
+            }
+
+            /* 3. 修正作品詳情浮動視窗 (Modal) 太長按不到的問題 */
+            .modal-content {
+                width: 95%;        /* 寬度佔滿 */
+                padding: 25px 15px; /* 減少內距 */
+                max-height: 85vh;   /* 限制最大高度為螢幕的 85% */
+                overflow-y: auto;   /* 內容超出時出現卷軸 */
+                transform: skew(0deg); /* 手機版移除傾斜，增加閱讀性與觸控準確度 */
+                margin-top: 20px;
+            }
+            .close-modal {
+                top: 5px;
+                right: 5px;
+                width: 35px;
+                height: 35px;
+                line-height: 35px;
+                background: #000; /* 確保背景黑色以免跟內容混雜 */
+                z-index: 100;     /* 確保在最上層 */
+            }
+            #modal-title {
+                font-size: 1.8rem !important; /* 標題縮小 */
+                word-wrap: break-word;
+            }
+
+            /* 其他修正：首頁信件內容字體調整 */
+            .letter-bg-text { font-size: 4rem; top: 5%; left: 0; }
+            .paper-sheet { 
+                padding: 30px; 
+                width: 90%; 
+                font-size: 1rem; 
+            }
+            
+            /* 其他修正：包裹箱子 */
+            .supply-crate { transform: scale(0.8); }
+            .crate-content { width: 90%; max-width: 300px; padding: 20px; }
+            
+            /* 其他修正：子頁面標題 */
+            .page-header h1 { font-size: 2.5rem; }
+        }
         /* --- 核心變數 --- */
         :root {
             --p5-red: #D91518;
