@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom Portfolio | The Heist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Roboto:wght@900&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        /* --- 核心變數 --- */
+        :root {
+            --p5-red: #D91518;
+            --p5-black: #000000;
+            --p5-white: #FFFFFF;
+            --p5-gray: #222222;
+            --bg-texture: radial-gradient(#222 15%, transparent 16%) 0 0,
+                          radial-gradient(#222 15%, transparent 16%) 8px 8px,
+                          radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px,
+                          radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px;
+            --bg-size: 16px 16px;
+        }
+
+        /* --- 噁心模式 (Pink + Green) --- */
+        body.nauseating-mode {
+            --p5-red: #FF00FF;       /* 螢光粉紅 */
+            --p5-black: #00FF00;     /* 螢光綠 */
+            --p5-white: #FF00FF;     /* 文字也變粉紅，極度刺眼 */
+            --p5-gray: #CCFF00;      /* 噁心的黃綠色 */
+            --bg-texture: none; 
+        }
+
+        /* --- 基礎設定 --- */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--p5-black);
+            color: var(--p5-white);
+            font-family: 'Roboto', 'Black Han Sans', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease, filter 0.3s ease;
+        }
+        
+        body::-webkit-scrollbar { width: 8px; background: var(--p5-black); }
+        body::-webkit-scrollbar-thumb { background: var(--p5-red); }
+        button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+
+        /* --- 0. 預告信開場 (Splash Card) --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: var(--p5-black);
+            background-image: repeating-linear-gradient(45deg, #000 0, #000 10px, #111 10px, #111 20px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.8s ease;
+        }
+
+        .calling-card {
+            background: var(--p5-red); color: black; width: 300px; padding: 40px 20px;
+            transform: rotate(-5deg); box-shadow: 15px 15px 0 black; border: 4px solid white;
+            text-align: center; position: relative; animation: floatCard 3s ease-in-out infinite;
+        }
+        .card-icon { font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 0 white; }
+        .card-text {
+            font-family: 'Special Elite', cursive; font-size: 1.5rem; font-weight: bold;
+            line-height: 1.4; background: black; color: white; display: inline-block;
+            padding: 5px 10px; transform: skew(-2deg);
+        }
+        .enter-btn {
+            margin-top: 50px; background: white; color: black; padding: 15px 40px;
+            font-size: 1.5rem; font-weight: 900; transform: skew(-15deg); 
+            border: 2px solid var(--p5-red); transition: all 0.2s; box-shadow: 5px 5px 0 var(--p5-red);
+        }
+        .enter-btn:hover { 
+            background: var(--p5-red); color: white; border-color: white;
+            transform: skew(-15deg) scale(1.1); box-shadow: 5px 5px 0 white;
+        }
+
+        /* --- 視圖管理 --- */
+        .view-section { display: none; width: 100%; min-height: 100vh; animation: fadeIn 0.8s ease forwards; }
+        .view-section.active { display: block; }
+
+        /* --- Parallax Common --- */
+        .parallax-item {
+            --scroll-y: 0px; 
+            transition: transform 0.1s linear; 
+        }
+
+        /* --- SECTION A: 信件內容 (The Letter Content) --- */
+        #letter-section {
+            min-height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+            background: #111;
+            padding: 50px 20px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .letter-bg-text {
+            position: absolute;
+            font-size: 10rem;
+            color: rgba(255,255,255,0.03);
+            font-weight: 900;
+            top: 10%;
+            left: -10%;
+            white-space: nowrap;
+            pointer-events: none;
+            transform: rotate(-5deg) translateY(var(--scroll-y));
+        }
+
+        .paper-sheet {
+            background: #fdfbf7;
+            color: #222;
+            max-width: 600px;
+            padding: 60px;
+            font-family: 'Special Elite', monospace;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            transform: rotate(2deg) translateY(var(--scroll-y));
+        }
+
+        .tape-strip {
+            position: absolute; top: -15px; left: 50%; 
+            width: 120px; height: 35px; background: rgba(255, 255, 255, 0.4);
+            border-left: 2px dashed rgba(0,0,0,0.1); border-right: 2px dashed rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transform: translateX(-50%) rotate(-2deg) translateY(calc(var(--scroll-y) * 1.2)); 
+        }
+
+        /* --- SECTION B: Avatar & Hashtags (Hero) --- */
+        #hero {
+            height: 100vh; position: relative; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            background-image: var(--bg-texture); background-size: var(--bg-size);
+            border-top: 5px solid var(--p5-red);
+            z-index: 2;
+            transition: background 0.5s ease;
+        }
+        
+        .hero-bg-shape {
+            position: absolute; background: var(--p5-red); opacity: 0.9;
+            width: 70%; height: 150%; left: -20%; top: -20%;
+            clip-path: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
+            transform: translateY(var(--scroll-y));
+            transition: background 0.5s ease;
+        }
+
+        .hero-avatar {
+            width: 300px; height: 400px; background: #333; border: 5px solid white;
+            position: relative; z-index: 2; 
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.8);
+            transform: rotate(-3deg) translateY(var(--scroll-y));
+        }
+
+        .tags-container { position: absolute; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+        
+        .tag {
+            position: absolute; padding: 10px 20px; font-size: 1.2rem; font-weight: 900;
+            text-transform: uppercase; pointer-events: auto;
+            transition: transform 0.1s, background-color 0.5s, color 0.5s, border-color 0.5s; 
+            box-shadow: 5px 5px 0px rgba(0,0,0,1);
+            transform: skew(-15deg) translateY(var(--scroll-y)); 
+        }
+        
+        .tag:hover { 
+            transform: skew(-15deg) scale(1.1) translateY(var(--scroll-y)) !important; 
+        }
+
+        /* 標籤配色 */
+        .tag-red { background: white; color: var(--p5-red); border: 4px solid black; }
+        .tag-black { background: black; color: white; border: 2px solid white; }
+        .tag-long { width: auto; min-width: 300px; text-align: center; }
+
+        body.nauseating-mode .tag-red {
+            background: var(--p5-red); color: var(--p5-black); border-color: var(--p5-white);
+        }
+        body.nauseating-mode .tag-black {
+            background: var(--p5-black); color: var(--p5-red); border-color: var(--p5-red);
+        }
+        
+        /* 標籤位置定義 */
+        .tag-game { top: 15%; left: 8%; transform: skew(-15deg) rotate(-10deg) translateY(var(--scroll-y)); }
+        .tag-narrative {
+            top: 25%; right: 15%;
+            font-size: 3.5rem;
+            padding: 20px 40px;
+            z-index: 10;
+            transform: skew(-10deg) rotate(2deg) translateY(var(--scroll-y));
+        }
+        .tag-stories { top: 12%; right: 5%; font-size: 1rem; transform: skew(-15deg) rotate(5deg) translateY(var(--scroll-y)); }
+        .tag-ux { bottom: 25%; left: 10%; font-size: 2rem; transform: skew(-15deg) rotate(-5deg) translateY(var(--scroll-y)); }
+        .tag-service {
+            bottom: 10%; left: 50%;
+            width: 400px; text-align: center;
+            transform: translateX(-50%) skew(-15deg) translateY(var(--scroll-y));
+        }
+
+        .mystery-wrapper {
+            position: absolute; top: 50%; left: 58%;
+            transform: translateY(var(--scroll-y));
+            z-index: 5;
+        }
+        .tag-mystery { 
+            background: black; color: var(--p5-red); border: 2px solid var(--p5-red);
+            font-weight: bold; padding: 5px 10px;
+            animation: pulse 0.5s infinite alternate; 
+            cursor: pointer; pointer-events: auto; 
+        }
+        body.nauseating-mode .tag-mystery {
+            animation: none;
+            background: var(--p5-red); color: var(--p5-black);
+            content: "#WTF?!";
+        }
+
+        /* --- SECTION C: Split Panels --- */
+        #portal-split {
+            height: 80vh; display: flex; position: relative; overflow: hidden; background: #000;
+            z-index: 3;
+        }
+        .split-panel { position: relative; height: 100%; transition: all 0.5s ease; display: flex; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+        .panel-research { width: 55%; background: #111; clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%); z-index: 1; }
+        .panel-research:hover { width: 70%; background: #1a1a1a; z-index: 10; }
+        .panel-works { width: 55%; background: var(--p5-red); margin-left: -10%; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%); z-index: 1; transition: background-color 0.5s ease; }
+        .panel-works:hover { width: 70%; z-index: 10; }
+        .panel-content { text-align: center; transform: skew(-10deg); pointer-events: none; }
+        .panel-title { font-size: 4rem; text-transform: uppercase; font-style: italic; margin: 0; text-shadow: 5px 5px 0 rgba(0,0,0,0.3); }
+        .panel-desc { font-size: 1.2rem; background: black; color: white; display: inline-block; padding: 5px 15px; margin-top: 10px; }
+        .action-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent 0, transparent 40px, rgba(255,255,255,0.05) 40px, rgba(255,255,255,0.05) 42px); pointer-events: none; }
+
+        /* --- SECTION D: The Package --- */
+        #contact-package {
+            padding: 120px 0; background: #1a1a1a; text-align: center;
+            position: relative; min-height: 500px;
+            display: flex; justify-content: center; align-items: center;
+            border-top: 10px solid black;
+            z-index: 4;
+        }
+        .supply-crate {
+            width: 250px; height: 250px; background: #333; position: relative; cursor: pointer;
+            border: 4px solid #666; transition: transform 0.3s; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .supply-crate:hover { transform: scale(1.05) rotate(2deg); }
+        .crate-label { position: absolute; width: 100%; top: 50%; transform: translateY(-50%); text-align: center; font-size: 2rem; color: rgba(255,255,255,0.1); font-weight: 900; }
+        .tape { position: absolute; background: #f0c420; color: black; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1rem; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        /* 交換後的順序 */
+        .tape-1 { width: 110%; height: 40px; top: 40%; left: -5%; transform: rotate(-5deg); z-index: 2; }
+        .tape-2 { width: 110%; height: 40px; top: 40%; left: -5%; transform: rotate(85deg); z-index: 1; }
+        
+        .crate-content { display: none; background: white; color: black; padding: 40px; width: 350px; transform: rotate(-2deg); box-shadow: 20px 20px 0 var(--p5-red); border: 3px solid black; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: left; }
+        .crate-header { font-size: 2rem; color: var(--p5-red); font-weight: 900; margin-bottom: 20px; text-transform: uppercase;}
+        .contact-btn { display: block; width: 100%; padding: 12px; margin-top: 10px; background: black; color: white; text-align: center; font-weight: bold; text-decoration: none; transition: 0.2s; border: 2px solid black; }
+        .contact-btn:hover { background: var(--p5-red); color: white; border-color: var(--p5-red); }
+        .input-group { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 15px; }
+        .fake-input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; font-family: inherit; }
+        .return-btn { background: transparent; color: #666; border: 1px solid #ccc; margin-top: 10px; font-size: 0.8rem; }
+        .return-btn:hover { background: #eee; }
+
+        /* --- SUB-PAGES --- */
+        .sub-page { padding: 50px 5%; background: var(--p5-black); min-height: 100vh; position: relative; }
+        .back-btn { position: fixed; top: 20px; left: 20px; z-index: 100; background: black; color: white; padding: 10px 20px; border: 2px solid white; font-weight: bold; transform: skew(-15deg); }
+        .back-btn:hover { background: white; color: black; }
+        .page-header { margin-bottom: 50px; border-bottom: 5px solid var(--p5-red); display: inline-block; padding-right: 50px; }
+        .page-header h1 { font-size: 4rem; margin: 0; color: white; font-style: italic; }
+        .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+        .grid-item { background: #222; border: 1px solid #444; padding: 20px; transition: 0.3s; position: relative; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
+        .grid-item:hover { border-color: var(--p5-red); transform: translateY(-5px); box-shadow: 5px 5px 0 var(--p5-red); }
+        .grid-tag { background: var(--p5-red); color: white; font-size: 0.8rem; padding: 2px 8px; position: absolute; top: 0; right: 0; }
+        
+        .code-text { font-family: 'Courier New', monospace; color: #0f0; font-size: 0.8rem; word-break: break-all; opacity: 0.5; overflow: hidden; max-height: 100px; }
+        .garbled { color: #555; font-size: 0.7rem; }
+
+        /* --- MODAL (Floating Page) --- */
+        #detail-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 999;
+            justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        #detail-modal.active { opacity: 1; }
+        .modal-content {
+            width: 80%; max-width: 800px; background: #111; border: 2px solid white;
+            padding: 40px; position: relative;
+            transform: skew(-2deg);
+            box-shadow: 10px 10px 0 var(--p5-red);
+        }
+        .close-modal {
+            position: absolute; top: 10px; right: 10px; font-size: 2rem; color: white; cursor: pointer;
+            width: 40px; height: 40px; line-height: 40px; text-align: center; border: 1px solid #555;
+        }
+        .close-modal:hover { background: var(--p5-red); border-color: var(--p5-red); }
+
+        /* 新增：外部連結按鈕樣式 */
+        .external-link-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 30px;
+            background: black;
+            color: white;
+            border: 2px solid white;
+            text-decoration: none;
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 5px 5px 0 white;
+        }
+        .external-link-btn:hover {
+            background: var(--p5-red);
+            border-color: var(--p5-red);
+            box-shadow: 5px 5px 0 var(--p5-red);
+            transform: translateY(-3px);
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes floatCard { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(-5deg) translateY(-10px); } }
+        @keyframes popIn { from { transform: scale(0) rotate(10deg); } to { transform: scale(1) rotate(-2deg); } }
+        @keyframes pulse { 0% { opacity: 0.8; box-shadow: 0 0 5px var(--p5-red); } 100% { opacity: 1; box-shadow: 0 0 20px var(--p5-red); } }
+    </style>
+</head>
+<body>
+
+    <!-- 0. SPLASH SCREEN -->
+    <div id="splash-screen">
+        <div class="calling-card">
+            <div class="card-icon">🎩</div>
+            <div class="card-text">Welcome...<br>My Dearest Guest...</div>
+        </div>
+        <button class="enter-btn" onclick="enterSite()">TAKE YOUR HEART</button>
+    </div>
+
+    <!-- VIEW: HOME -->
+    <div id="view-home" class="view-section">
+        
+        <!-- A. THE LETTER CONTENT -->
+        <section id="letter-section">
+            <div class="letter-bg-text parallax-item" data-speed="0.1">
+                INVINCIBLE<br>SUMMER
+            </div>
+            
+            <div class="paper-sheet parallax-item" data-speed="-0.1">
+                <div class="tape-strip parallax-item" data-speed="-0.15"></div>
+                <p>"In the midst of winter, I found there was, within me, an invincible summer."</p>
+                <p>And that makes me happy. For it says that no matter how hard the world pushes against me, within me, there’s something stronger – something better, pushing right back.</p>
+                <p style="text-align: right; margin-top: 30px; font-weight: bold;">— Albert Camus</p>
+            </div>
+        </section>
+
+        <!-- B. HERO (Avatar & Hashtags) -->
+        <section id="hero">
+            <div class="hero-bg-shape parallax-item" data-speed="0.2"></div>
+            <div class="hero-avatar parallax-item" data-speed="-0.05">
+    <img src="hero.png" alt="Avatar">
+    <h3>YANG CHIH HSIEN</h3>
+</div>
+            <div class="tags-container">
+                <div class="tag tag-black tag-game parallax-item" data-speed="0.1">#Game</div>
+                <div class="tag tag-red tag-narrative parallax-item" data-speed="-0.15">#Narrative</div>
+                <div class="tag tag-black tag-stories parallax-item" data-speed="0.08">#ShortStories</div>
+                <div class="tag tag-black tag-ux parallax-item" data-speed="0.12">#yingssin</div>
+                <div class="tag tag-red tag-service parallax-item" data-speed="-0.05">#ServiceDesign</div>
+                <div class="mystery-wrapper parallax-item" data-speed="-0.2">
+                    <div class="tag tag-mystery" onclick="toggleNauseaMode()">#???</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- C. PORTALS -->
+        <section id="portal-split">
+            <div class="split-panel panel-research" onclick="switchView('research')">
+                <div class="action-lines"></div>
+                <div class="panel-content">
+                    <h2 class="panel-title" style="color: #00d5ff;">RESEARCH</h2>
+                    <div class="panel-desc">THE ARCHIVE</div>
+                </div>
+            </div>
+            <div class="split-panel panel-works" onclick="switchView('portfolio')">
+                <div class="action-lines"></div>
+                <div class="panel-content">
+                    <h2 class="panel-title" style="color: white;">WORKS</h2>
+                    <div class="panel-desc">THE HEIST</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- D. PACKAGE -->
+        <section id="contact-package">
+            <div id="crate" class="supply-crate" onclick="openPackage()">
+                <div class="crate-label">SUPPLY</div>
+                <!-- Swapped Order -->
+                <div class="tape tape-2">CONFIDENTIAL</div>
+                <div class="tape tape-1">WANT MORE?</div>
+            </div>
+            <div id="crate-opened" class="crate-content">
+                <!-- Updated Header -->
+                <div class="crate-header">CONFIDENTIAL FILES</div>
+                <a href="#" class="contact-btn">DOWNLOAD RESUME</a>
+                <a href="mailto:phantom@thief.com" class="contact-btn">SEND EMAIL</a>
+                <div class="input-group">
+                    <p style="font-weight:bold; margin:0 0 5px 0;">LEAVE YOUR INFO:</p>
+                    <!-- Updated Placeholders/Text -->
+                    <input type="text" class="fake-input" placeholder="Your Name...">
+                    <input type="text" class="fake-input" placeholder="Email...">
+                    <button class="contact-btn" style="margin-top:5px; background:var(--p5-red); border-color:var(--p5-red);">SEND</button>
+                </div>
+                <button class="contact-btn return-btn" onclick="closePackage()">[ CLOSE BOX ]</button>
+            </div>
+        </section>
+        
+        <footer style="background:var(--p5-red); color:white; padding:20px; text-align:center;">
+            <p>&copy; 2025 PHANTOM THIEVES</p>
+        </footer>
+    </div>
+
+    <!-- VIEW: RESEARCH (ARCHIVES) -->
+    <div id="view-research" class="view-section sub-page">
+        <button class="back-btn" onclick="switchView('home')">← ESCAPE</button>
+        <!-- Updated Title -->
+        <div class="page-header"><h1>ARCHIVES</h1></div>
+        <div class="content-grid" id="research-grid">
+            <!-- Items Rendered by JS -->
+        </div>
+    </div>
+
+    <!-- VIEW: PORTFOLIO (COLLECTION) -->
+    <div id="view-portfolio" class="view-section sub-page">
+        <button class="back-btn" onclick="switchView('home')">← ESCAPE</button>
+        <!-- Updated Title -->
+        <div class="page-header"><h1>COLLECTION</h1></div>
+        <div class="content-grid" id="works-grid">
+            <!-- Items Rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" onclick="closeDetail(event)">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeDetail(event)">X</div>
+            <h2 id="modal-title" style="color:var(--p5-red); font-size:2.5rem; margin-top:0;">LOADING...</h2>
+            <p style="font-family:'Courier New'; color:#0f0;">> DECRYPTING DATA STREAM...</p>
+            <p style="font-family:'Courier New'; color:#0f0;">> ACCESS GRANTED.</p>
+            <hr style="border:1px dashed #555; margin:20px 0;">
+            <div id="modal-body">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //         EDIT YOUR INFORMATION HERE
+        // ==========================================
+
+        // 1. RESEARCH ITEMS (ARCHIVES) - 6 Slots
+        // Edit 'title', 'desc' (subtitle), 'detail' (popup content), and 'url' (external link)
+        // If you don't have a link for an item, leave 'url' as empty string: ''
+        const researchData = [
+    { 
+        id: 'FILE_001', 
+        title: 'Serious Game Design: A Study on "Tell Me Why"', 
+        desc: 'UX research methods for serious games.', 
+        detail: '<h1>Serious Game Design: A Study on "Tell Me Why"</h1><p>Investigated user experience (UX) research methods to enhance serious game design. Conducted cultural probes, contextual inquiries, and co-design sessions to analyze player responses. Provided actionable design recommendations to improve engagement in serious games.</p>',
+        url: 'https://www.google.com' 
+    },
+    { 
+        id: 'FILE_002', 
+        title: 'Impact of Interactive Narrative in Serious Games', 
+        desc: 'Storytelling influence on conceptual messaging.', 
+        detail: '<h1>Impact of Interactive Narrative in Serious Games</h1><p>Studied how interactive storytelling influences conceptual messaging in educational and persuasive games. Analyzed audience characteristics and narrative structures to balance entertainment and educational impact.</p>',
+        url: 'https://www.google.com' 
+    },
+    { 
+        id: 'FILE_003', 
+        title: 'Food Waste Revolution | Foodbank Hsinchu', 
+        desc: 'Project Leader, Marketing & Research Contributor.', 
+        detail: '<h1>Food Waste Revolution | Foodbank Hsinchu</h1><p>Led project direction and strategy while actively contributing to marketing execution and research. Applied persuasive communication theories and target audience analysis to develop effective outreach strategies. Successfully engaged 70+ participants and recruited new volunteers to sustain the initiative.</p>',
+        url: 'https://www.google.com' 
+    },
+    { 
+        id: 'FILE_004', 
+        title: 'NYCU AR APP Design Evaluation & Prototype Development', 
+        desc: 'UX Researcher: Usability pain points and Personas.', 
+        detail: '<h1>NYCU AR APP Design Evaluation & Prototype Development</h1><p>Interviewed five participants to identify usability pain points in an AR application. Developed personas, scenario designs, and task evaluations to refine UX design. Conducted heuristic and usability evaluations, proposed design improvements, and built a functional prototype.</p>',
+        url: 'https://www.google.com' 
+    },
+    { 
+        id: 'FILE_005', 
+        title: 'Campus Navigation Chatbot UX & Prototype Development', 
+        desc: 'UX Researcher & Designer: Interaction models.', 
+        detail: '<h1>Campus Navigation Chatbot UX & Prototype Development</h1><p>Designed user stories and scenarios to improve chatbot interaction models. Conducted co-creation workshops to define chatbot personality and emotional design. Developed functional prompts aligned with user needs and refined chatbot UX.</p>',
+        url: 'https://www.google.com' 
+    }
+];
+
+        // 2. WORK ITEMS (COLLECTION) - 15 Slots
+        const worksData = [
+    { 
+        id: 'ITEM_001', 
+        title: 'Nancy\'s Blog', 
+        desc: 'Web-based puzzle game.', 
+        detail: '<h1>Nancy\'s Blog</h1><p>Game Designer, Programmer (Independent Work). Designed a blog-like interactive experience with reverse storytelling and eerie contradictions. Explored societal complicity through player choices, questioning the notion of justice. Showcased at an indie game exhibition in Northeast China.</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_002', 
+        title: 'Test Your Score!', 
+        desc: '2D side-scrolling action game.', 
+        detail: '<h1>Test Your Score!</h1><p>Leader, Game Designer, Programmer. Satirized the popularity of personality tests by integrating conflicting choices and difficulty scaling. Critiqued societal blind conformity through exaggerated mechanics and narrative twists. Presented at an internal course showcase.</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_003', 
+        title: 'Weather Manager', 
+        desc: 'Text-based interactive fiction.', 
+        detail: '<h1>Weather Manager</h1><p>Narrative Designer, Puzzle Designer. Designed an interactive mystery where players manage the weather while uncovering a murder case. Balanced player interactions with NPCs and hidden objectives, introducing moral dilemmas. Finalist for the Young Pin Sponsor Awards.</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_004', 
+        title: 'Mess（一塌糊塗）', 
+        desc: 'Twine narrative game.', 
+        detail: '<h1>Mess</h1><p>Leader, Game&Narrative Designer, Programmer. "Serial killers don\'t really exist, do they? If they do, they must kill for a reason, right? ...Anyway, it has nothing to do with me... right?" A short game featuring black humor storytelling through absurd choices. Explore the truth of the story through variable changes and branching paths.</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_005', 
+        title: 'Spin', 
+        desc: 'Twine narrative game.', 
+        detail: '<h1>Spin</h1><p>"School. Actually, I never seriously thought about what \'school\' is. To me, perhaps it has always been... just a..." A short narrative puzzle game that explores past memories. Follow the clues to uncover buried secrets.</p>', 
+        url: ''
+    },
+    {
+        id: 'ITEM_006', 
+        title: '文符復興 - Text Renaissance', 
+        desc: '2D puzzle game', 
+        detail: '<h1>文符復興 - Text Renaissance</h1><p>Game Concept & Art Design. Trapped in a room,<br>Using the power of words to overcome trials.<br>If you die, so be it; the lessons will be inherited.<br>Ultimately, you must decide:<br>What Legacy will you leave behind?</p>', 
+        url: ''
+    },
+    {
+        id: 'ITEM_007', 
+        title: '在光照的地底蟄伏', 
+        desc: 'Short story', 
+        detail: '<h1>在光照的地底蟄伏</h1><p>The author of this work.<br>Jacaranda Creative Awards 2022 Honorable Mention.</p>', 
+        url: ''
+    },
+    {
+        id: 'ITEM_008', 
+        title: '請讓我歸於平凡', 
+        desc: 'Short story', 
+        detail: '<h1>請讓我歸於平凡</h1><p>The author of this work.<br>Jacaranda Creative Awards 2023 Honorable Mention.</p>', 
+        url: ''
+    },
+    {
+        id: 'ITEM_009', 
+        title: '孤島', 
+        desc: 'Short story', 
+        detail: '<h1>孤島</h1><p>The author of this work.<br>Hsinchu High School & Hsinchu Girls\' High School Literature Award 2021 Shortlist.</p>', 
+        url: ''
+    },
+    {
+        id: 'ITEM_010', 
+        title: '所有人都是神明的孩子', 
+        desc: 'Short story', 
+        detail: '<h1>所有人都是神明的孩子</h1><p>The author of this work.</p>', 
+        url: ''
+    },
+    { 
+        id: 'ITEM_011', 
+        title: 'Photography', 
+        desc: 'Street Snapshots.', 
+        detail: '<h1>Gallery</h1><p>Photo collection from Tokyo...</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_012', 
+        title: 'Music Video', 
+        desc: 'Motion Graphics.', 
+        detail: '<h1>MV Production</h1><p>After Effects work...</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_013', 
+        title: 'Smart Home', 
+        desc: 'IoT Prototype.', 
+        detail: '<h1>IoT Dashboard</h1><p>Arduino + Raspberry Pi project...</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_014', 
+        title: 'Fitness App', 
+        desc: 'Mobile UI.', 
+        detail: '<h1>Gym Tracker</h1><p>Figma high-fidelity prototypes...</p>', 
+        url: '' 
+    },
+    { 
+        id: 'ITEM_015', 
+        title: 'Secret Project', 
+        desc: 'Coming Soon.', 
+        detail: '<h1>Coming Soon</h1><p>Under development...</p>', 
+        url: '' 
+    }
+];
+
+        // ==========================================
+        //         SYSTEM LOGIC (DO NOT EDIT)
+        // ==========================================
+
+        window.onload = function() {
+            renderGrid('research-grid', researchData);
+            renderGrid('works-grid', worksData);
+        };
+
+        function renderGrid(containerId, data) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const randomCode = Math.random().toString(16).substr(2, 8).toUpperCase();
+                
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.onclick = function() { openDetail(containerId, index); };
+                
+                div.innerHTML = `
+                    <div class="grid-tag">NO.${String(index + 1).padStart(3, '0')}</div>
+                    <h3>${item.title}</h3>
+                    <p style="color:#aaa; font-size:0.9rem; margin:5px 0;">${item.desc}</p>
+                    <div class="code-text">
+                        ID: ${item.id}<br>
+                        HASH: ${randomCode}<br>
+                        STATUS: ACTIVE
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function enterSite() {
+            const splash = document.getElementById('splash-screen');
+            splash.style.transform = "scale(1.5)";
+            splash.style.opacity = "0";
+            setTimeout(() => { 
+                splash.style.display = 'none'; 
+                document.getElementById('view-home').classList.add('active');
+            }, 800);
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function openPackage() {
+            document.getElementById('crate').style.display = 'none';
+            document.getElementById('crate-opened').style.display = 'block';
+        }
+
+        function closePackage() {
+            const crate = document.getElementById('crate');
+            const content = document.getElementById('crate-opened');
+            content.style.display = 'none';
+            crate.style.display = 'block';
+            crate.style.transform = "scale(1)";
+        }
+
+        function toggleNauseaMode() {
+            document.body.classList.toggle('nauseating-mode');
+            const tag = document.querySelector('.tag-mystery');
+            
+            if(document.body.classList.contains('nauseating-mode')) {
+                tag.innerText = "#WTF?!";
+            } else {
+                tag.innerText = "#???";
+            }
+        }
+
+        // --- Modal Logic ---
+        function openDetail(gridId, index) {
+            const modal = document.getElementById('detail-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            // Find data based on grid ID
+            let item;
+            if(gridId === 'research-grid') {
+                item = researchData[index];
+            } else {
+                item = worksData[index];
+            }
+
+            modalTitle.innerText = item.id;
+            
+            // Build Content
+            let contentHTML = item.detail;
+            
+            // If URL exists, append the external link button
+            if(item.url && item.url.trim() !== "" && item.id.startsWith('ITEM_')) {
+                contentHTML += `
+                    <div style="text-align:center;">
+                        <a href="${item.url}" target="_blank" class="external-link-btn">
+                            [ ACCESS GAME ]
+                        </a>
+                    </div>
+                `;
+            }
+            if(item.url && item.url.trim() !== "" && item.id.startsWith('FILE_')) {
+                contentHTML += `
+                    <div style="text-align:center;">
+                        <a href="mailto:your_email@example.com?subject=Requesting File: ${item.title}" target="_blank" class="external-link-btn">
+                            [ REQUEST SOURCE FILE ]
+                        </a>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = contentHTML;
+
+            modal.style.display = 'flex';
+            // Force reflow
+            void modal.offsetWidth;
+            modal.classList.add('active');
+        }
+
+        function closeDetail(e) {
+            if(e.target.id === 'detail-modal' || e.target.classList.contains('close-modal')) {
+                const modal = document.getElementById('detail-modal');
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
+            }
+        }
+
+        // --- Relative Parallax ---
+        window.addEventListener('scroll', function() {
+            if(!document.getElementById('view-home').classList.contains('active')) return;
+            const scrollY = window.pageYOffset;
+            document.querySelectorAll('.parallax-item').forEach(el => {
+                const speed = parseFloat(el.getAttribute('data-speed'));
+                const section = el.closest('section');
+                if(!section) return;
+                const sectionTop = section.offsetTop;
+                const yPos = (scrollY - sectionTop) * speed;
+                el.style.setProperty('--scroll-y', `${yPos}px`);
+            });
+        });
+    </script>
+</body>
+</html>
