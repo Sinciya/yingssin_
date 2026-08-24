@@ -1358,7 +1358,7 @@
             let contentHTML = item.detail;
             
             // If URL exists, append the external link button
-            if(item.url && item.url.trim() !== "" && item.id.startsWith('ITEM_')) {
+            if(item.url && item.url.trim() !== "" && gridId === 'works-grid') {
                 contentHTML += `
                     <div style="text-align:center;">
                         <a href="${item.url}" target="_blank" class="external-link-btn">
@@ -1367,7 +1367,7 @@
                     </div>
                 `;
             }
-            if(item.url && item.url.trim() !== "" && item.id.startsWith('FILE_')) {
+            if(item.url && item.url.trim() !== "" && gridId === 'research-grid') {
                 contentHTML += `
                     <div style="text-align:center;">
                         <a href="mailto:sinciya.yang@gmail.com?subject=Requesting File: ${item.title}" target="_blank" class="external-link-btn">
