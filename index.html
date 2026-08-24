@@ -1255,7 +1255,7 @@
                 div.onclick = function() { openDetail(containerId, index); };
                 
                 div.innerHTML = `
-                    <div class="grid-tag">NO.${String(index + 1).padStart(3, '0')}</div>
+                    <div class="grid-tag">NO.${String(containerId === 'works-grid' ? index : index + 1).padStart(3, '0')}</div>
                     <h3>${item.title}</h3>
                     <p style="color:#aaa; font-size:0.9rem; margin:5px 0;">${item.desc}</p>
                     <div class="code-text">
